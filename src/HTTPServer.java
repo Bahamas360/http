@@ -50,6 +50,7 @@ class HttpRequestHandler implements Runnable {
             filepath = sanitize(sourceFile + filepath);
             File file = new File(filepath);
             checkIfFileExists(file, clientOutput ,404, "Not Found");
+
         } catch (Exception e) {
             System.err.println("Request handling exception: " + e.getMessage());
             e.printStackTrace();
