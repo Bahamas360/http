@@ -19,7 +19,6 @@ public class WebServer  {
     public static void main(String[] args) {
         //if ctrl + c is pressed shuts down the server with respective messages
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            System.out.println("Shutting down the server");
             shutdown();
         }));
         //checks for arguments if there are two give keystore path and pass their values
@@ -28,7 +27,7 @@ public class WebServer  {
             keystorepass = args[1];
         }
         //if its 0 or 1 the user either didnt provide the keystore path or the password
-        else if(args.length > 0){
+        else if(args.length >= 0){
             System.err.println("Error:Didn't provide keystore path or password.");
             System.err.println("Usage: java WebStore.java <keystorepath> <keystorepassword>");
             //close
