@@ -17,6 +17,7 @@ public class WebServer  {
     public static String keystorepass = null;
     private static volatile boolean isRunning = true;
     public static void main(String[] args) {
+        //if ctrl + c is pressed shuts down the server with respective messages
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             System.out.println("Shutting down the server");
             shutdown();
@@ -123,11 +124,16 @@ class HttpRequestHandler implements Runnable {
                 sendErrorResponse(clientOutput,405, "Method not Allowed");
                 return;
             }
+            //splits the requestline on space
             String[] requestPart =  requestLine.split(" ");
             System.out.println(requestPart[0]+ requestPart[1]+ requestPart[2]);
+            //sites file path to if it contains /
             String filepath = requestPart[1].equals("/") ? "/index.html" : requestPart[1];
+            //sanitize
             filepath = sanitize(sourceFile + filepath);
+            //create file object on file path
             File file = new File(filepath);
+            //check if file exists
             checkIfFileExists(file, clientOutput ,404, "Not Found");
 
         } catch (Exception e) {
@@ -142,6 +148,7 @@ class HttpRequestHandler implements Runnable {
         }
 
     }
+    //checks if the file exists if does it sends response if there is no file sends 404 not found message
     private void checkIfFileExists(File file, DataOutputStream clientOutput, int code, String message) throws IOException {
         if(!file.exists()){
             sendErrorResponse(clientOutput, code, message);
@@ -150,6 +157,7 @@ class HttpRequestHandler implements Runnable {
             sendFile(clientOutput, file);
         }
     }
+    //sanitizes the path for multipule ../ or // and returns the sanitized path
     private String sanitize(String s) {
         while(s.contains("../")){
             s = s.replace("../", "/");
@@ -159,9 +167,11 @@ class HttpRequestHandler implements Runnable {
         }
         return s;
     }
-
+    //method to create a error page for respected error and message
     private void sendErrorResponse(DataOutputStream clientOutput, int code, String message) throws IOException {
+        //build the error message
         String ErrorMessage = code + " " + message;
+        //create respose with header and page
         String Response = "HTTP/1.1 " + ErrorMessage + "\r\n" +
                 "Content-Type: text/html\r\n" +
                 "\r\n" +
@@ -186,29 +196,42 @@ class HttpRequestHandler implements Runnable {
                 "</h1>\r\n" +
                 "</body>\r\n" +
                 "</html>";
+        //send the respose to the client
         clientOutput.writeBytes(Response);
     }
     private void sendFile(DataOutputStream clientOutput, File file) throws IOException {
+        //get the contenttype
         String fileType = contentType(file.getName());
+        //get the length of the file
         long contentsLength = file.length();
+        //create the response with header
         String response = "HTTP/1.1 200 OK\r\n" +
                 "Content-Type:"+ fileType + "\r\n" +
                 "Content-Length: "+ contentsLength + "\r\n" +
                 "\r\n";
+        //send out the respose
         clientOutput.writeBytes(response);
         try {
+            //takes inputstream of a file
             FileInputStream fileInputStream = new FileInputStream(file);
+            //create a byte buffer of the length ofthe file
+            //hold chunks of the file
             byte[] buffer = new byte[(int) file.length()];
+
             int curByte;
+            //reads in to buffer when end of file return -1
             while ((curByte = fileInputStream.read(buffer)) != -1) {
+                //send the valid portion of file to the client
                 clientOutput.write(buffer, 0, curByte);
             }
         }catch (FileNotFoundException e) {
             sendErrorResponse(clientOutput, 404, "Not Found");
         }
     }
+    //method to get the contenttype of the file
     private String contentType(String fileName){
         String type = "";
+        //hashmap to store the possible file types
         HashMap<String, String> contentTypes = new HashMap<>();
         contentTypes.put("html", "text/html");
         contentTypes.put("css", "text/css");
@@ -221,12 +244,14 @@ class HttpRequestHandler implements Runnable {
         contentTypes.put("bmp", "image/bmp");
         contentTypes.put("ico", "image/x-icon");
         contentTypes.put("mp4", "video/mp4");
+        //for loop that goes through hashmap and finds what the correct contenttype
         for(String currentfiletype : contentTypes.keySet()){
             if(fileName.endsWith("."+currentfiletype)){
                 type = contentTypes.get(currentfiletype);
             }
 
         }
+        //returns the correct types
         return type;
     }
 
